@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipkin
+spec:
+  selector:
+    matchLabels:
+      app: zipkin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zipkin
+    spec:
+      containers:
+        - name: zipkin
+          resources:
+            limits:
+              ephemeral-storage: 100Mi
+            requests:
+              ephemeral-storage: 50Mi
+          image: openzipkin/zipkin:2.21.7
+          ports:
+            - containerPort: 9411
+          env:
+            - name: STORAGE_TYPE
+              value: "elasticsearch"
+            - name: ES_HTTP_LOGGING
+              value: "BODY"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin-svc
+  labels:
+    app: zipkin
+spec:
+  selector:
+    app: zipkin
+  type: NodePort
+  ports:
+    - port: 9411
+      nodePort: 30411

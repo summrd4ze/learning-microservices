@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
+          ports:
+            - containerPort: 9200
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/elasticsearch/data
+          env:
+            - name: discovery.type
+              value: "single-node"
+            - name: bootstrap.memory_lock
+              value: "true"
+            - name: ES_JAVA_OPTS
+              value: "-server -Xms512m -Xmx512m"
+            - name: TAKE_FILE_OWNERSHIP
+              value: 'true'
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: elasticsearch
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage
+  labels:
+    app: storage
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+    - port: 9200
+      targetPort: 9200

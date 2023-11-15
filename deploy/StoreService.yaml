@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storeservice
+  labels:
+    app: storeservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: storeservice
+  template:
+    metadata:
+      labels:
+        app: storeservice
+    spec:
+      containers:
+        - name: storeservice
+          image: storeservice
+          imagePullPolicy: "Never"
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "minikube"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storeservice-service
+spec:
+  selector:
+    app: storeservice
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

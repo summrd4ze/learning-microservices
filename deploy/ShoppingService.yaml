@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shoppingservice
+  labels:
+    app: shoppingservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shoppingservice
+  template:
+    metadata:
+      labels:
+        app: shoppingservice
+    spec:
+      containers:
+        - name: shoppingservice
+          image: shoppingservice
+          imagePullPolicy: "Never"
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "minikube"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shoppingservice-service
+spec:
+  type: NodePort
+  selector:
+    app: shoppingservice
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+      nodePort: 30000
