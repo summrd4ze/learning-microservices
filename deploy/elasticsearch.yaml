@@ -1,9 +1,10 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: elasticsearch
+  name: es-cluster
 spec:
-  replicas: 1
+  serviceName: elasticsearch
+  replicas: 2
   selector:
     matchLabels:
       app: elasticsearch
@@ -21,14 +22,37 @@ spec:
             - name: data
               mountPath: /usr/share/elasticsearch/data
           env:
-            - name: discovery.type
-              value: "single-node"
-            - name: bootstrap.memory_lock
-              value: "true"
+            - name: cluster.name
+              value: k8s-logs
+            - name: node.name
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: discovery.seed_hosts
+              value: "es-cluster-0.elasticsearch,es-cluster-1.elasticsearch"
+            - name: cluster.initial_master_nodes
+              value: "es-cluster-0,es-cluster-1"
             - name: ES_JAVA_OPTS
-              value: "-server -Xms512m -Xmx512m"
-            - name: TAKE_FILE_OWNERSHIP
-              value: 'true'
+              value: "-Xms512m -Xmx512m"
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: [ "sh", "-c", "chown -R 1000:1000 /usr/share/elasticsearch/data" ]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/elasticsearch/data
+        - name: increase-vm-max-map
+          image: busybox
+          command: [ "sysctl", "-w", "vm.max_map_count=262144" ]
+          securityContext:
+            privileged: true
+        - name: increase-fd-ulimit
+          image: busybox
+          command: [ "sh", "-c", "ulimit -n 65536" ]
+          securityContext:
+            privileged: true
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -44,12 +68,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: storage
+  name: elasticsearch
   labels:
-    app: storage
+    app: elasticsearch
 spec:
   selector:
     app: elasticsearch
+  clusterIP: None
   ports:
     - port: 9200
       targetPort: 9200

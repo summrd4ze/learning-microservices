@@ -19,12 +19,14 @@ spec:
               ephemeral-storage: 100Mi
             requests:
               ephemeral-storage: 50Mi
-          image: openzipkin/zipkin:2.21.7
+          image: openzipkin/zipkin:2.22
           ports:
             - containerPort: 9411
           env:
             - name: STORAGE_TYPE
               value: "elasticsearch"
+            - name: ES_HOSTS
+              value: "http://elasticsearch:9200"
             - name: ES_HTTP_LOGGING
               value: "BODY"
 ---
